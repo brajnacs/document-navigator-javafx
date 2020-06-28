@@ -1,78 +1,34 @@
 package sample;
 
-import javafx.beans.binding.Bindings;
-import javafx.beans.binding.IntegerBinding;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.GridPane;
 
 import java.net.URL;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 public class Controller implements Initializable {
-
-    @FXML
-    private Button previousPage;
-
-    @FXML
-    private Button nextPage;
-
-    @FXML
-    private ScrollPane imageHolder;
+    public GridPane root;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        ObservableList<String> imagePaths = FXCollections.observableArrayList(
-                "https://picsum.photos/seed/picsum1/400/600",
-                "https://picsum.photos/seed/picsum2/400/600",
-                "https://picsum.photos/seed/picsum3/400/600",
-                "https://picsum.photos/seed/picsum4/400/600",
-                "https://picsum.photos/seed/picsum5/400/600",
-                "https://picsum.photos/seed/picsum6/400/600"
-        );
+        DocumentNavigator documentNavigator = new DocumentNavigator();
+        documentNavigator.setImages(FXCollections.observableArrayList(
+                new Page(1L, "https://picsum.photos/seed/picsum1/400/600", "federal"),
+                new Page(2L, "https://picsum.photos/seed/picsum2/400/600", "w2"),
+                new Page(3L, "https://picsum.photos/seed/picsum3/400/600", "canadian"),
+                new Page(4L, "https://picsum.photos/seed/picsum4/400/600", "business"),
+                new Page(5L, "https://picsum.photos/seed/picsum5/400/600", "aadhar"),
+                new Page(6L, "https://picsum.photos/seed/picsum6/400/600", "pan")
 
-        ObservableList<StackPane> pages = imagePaths.stream()
-                .map(path -> new Image(path, true))
-                .map(this::createPage)
-                .collect(Collectors.toCollection(FXCollections::observableArrayList));
+        ));
 
-        IntegerBinding size = Bindings.size(pages);
-        IntegerProperty index = new SimpleIntegerProperty();
-        IntegerBinding currentImageIndex = index.add(1);
-        imageHolder.contentProperty().bind(Bindings.valueAt(pages, index));
-
-        previousPage.disableProperty().bind(currentImageIndex.lessThanOrEqualTo(0));
-        nextPage.disableProperty().bind(currentImageIndex.greaterThanOrEqualTo(size));
-
-        previousPage.setOnAction(event -> {
-            index.setValue(index.get() - 1);
+        documentNavigator.currentPageProperty().addListener((observableValue, oldPage, newPage) -> {
+            System.out.println(observableValue.getValue().getSlug());
         });
-        nextPage.setOnAction(event -> {
-            index.setValue(index.get() + 1);
-        });
-    }
 
-    private StackPane createPage(Image image) {
-        StackPane stackPane = new StackPane();
-        ProgressBar progressBar = new ProgressBar(0);
-        ImageView imageView = new ImageView(image);
-        stackPane.getChildren().add(imageView);
-        progressBar.progressProperty().bind(image.progressProperty());
-        progressBar.visibleProperty().bind(image.progressProperty().lessThan(1));
-        stackPane.getChildren().add(progressBar);
-        stackPane.setMinHeight(300);
-        stackPane.setMinWidth(200);
-        return stackPane;
+        root.getChildren().add(documentNavigator);
+
     }
 }
