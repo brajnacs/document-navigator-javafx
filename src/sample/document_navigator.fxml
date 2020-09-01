@@ -14,6 +14,7 @@
                 <Button fx:id="nextPage" text="Next" />
                 <Button fx:id="zoomInPage" text="Zoom In" />
                 <Button fx:id="zoomOutPage" text="Zoom Out" />
+                <Button fx:id="saveImage" text="Save Image" />
             </children>
         </HBox>
     </bottom>

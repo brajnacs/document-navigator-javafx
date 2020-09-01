@@ -7,6 +7,7 @@ import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -15,9 +16,13 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
@@ -38,14 +43,17 @@ public class DocumentNavigator extends BorderPane {
     @FXML
     private ScrollPane imageHolder;
 
+    @FXML
+    private Button saveImage;
+
     private ListProperty<Page> pages = new SimpleListProperty<>();
     private ObservableList<StackPane> images = FXCollections.observableArrayList();
     private ObjectProperty<Page> currentPage = new SimpleObjectProperty<>();
     private IntegerProperty index = new SimpleIntegerProperty();
     private ObjectBinding<StackPane> currentImage;
     private DoubleProperty zoomFactor = new SimpleDoubleProperty(1);
-    private DoubleProperty originalHeightProperty = new SimpleDoubleProperty(300);
-    private DoubleProperty originalWidthProperty = new SimpleDoubleProperty(200);
+    private DoubleProperty originalHeightProperty = new SimpleDoubleProperty(600);
+    private DoubleProperty originalWidthProperty = new SimpleDoubleProperty(400);
 
     public DocumentNavigator() {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("document_navigator.fxml"));
@@ -68,9 +76,9 @@ public class DocumentNavigator extends BorderPane {
         currentPage.bind(Bindings.valueAt(pages, index));
         IntegerBinding currentImageIndex = index.add(1);
         currentImage = Bindings.valueAt(images, index);
+        originalHeightProperty.bind(imageHolder.heightProperty());
+        originalWidthProperty.bind(imageHolder.widthProperty());
         imageHolder.contentProperty().bind(currentImage);
-        imageHolder.setMaxHeight(600);
-        imageHolder.setMaxWidth(400);
 
         previousPage.disableProperty().bind(index.lessThanOrEqualTo(0));
         nextPage.disableProperty().bind(currentImageIndex.greaterThanOrEqualTo(size));
@@ -91,8 +99,29 @@ public class DocumentNavigator extends BorderPane {
         nextPage.setOnAction(this::nextPage);
         zoomInPage.setOnAction(this::zoomInPage);
         zoomOutPage.setOnAction(this::zoomOutPage);
+        saveImage.setOnAction(this::saveImage);
         zoomInPage.disableProperty().bind(zoomFactor.greaterThanOrEqualTo(2));
         zoomOutPage.disableProperty().bind(zoomFactor.lessThanOrEqualTo(1));
+    }
+
+    private void saveImage(ActionEvent actionEvent) {
+        ImageView originalImageView = ((ImageView) currentImage.get().lookup(".image-view"));
+        ImageView imageView = new ImageView(originalImageView.getImage());
+        imageView.setScaleX(originalImageView.getScaleX());
+        imageView.setRotate(originalImageView.getRotate());
+        WritableImage outputImage = new WritableImage((int) imageView.getImage().getWidth(), (int) imageView.getImage().getHeight());
+
+        imageView.snapshot((snapshotResult) -> {
+            System.out.println(snapshotResult);
+            File outputFile = new File("/home/jackbraj/a.png");
+            BufferedImage bufferedImage = SwingFXUtils.fromFXImage(outputImage, null);
+            try {
+                ImageIO.write(bufferedImage, "png", outputFile);
+            } catch (IOException e) {
+                System.out.println("couldn't save image");
+            }
+            return null;
+        }, null, outputImage);
     }
 
     private void previousPage(ActionEvent actionEvent) {
@@ -128,8 +157,8 @@ public class DocumentNavigator extends BorderPane {
         progressBar.progressProperty().bind(image.progressProperty());
         progressBar.visibleProperty().bind(image.progressProperty().lessThan(1));
         stackPane.getChildren().add(progressBar);
-        stackPane.setMaxHeight(600);
-        stackPane.setMaxWidth(400);
+        stackPane.setPrefHeight(900);
+        stackPane.setPrefWidth(600);
         return stackPane;
     }
 
